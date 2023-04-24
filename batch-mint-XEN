@@ -1,0 +1,55 @@
+ // SPDX-License-Identifier: MIT
+ pragma solidity ^0.8.10;
+ interface IERC20 {
+     //引用XEN中接口，使用balanceOf和transfer中的两个函数
+     function balanceOf(address owner) external view returns(uint);
+     function transfer(address to, uint value) external returns(bool);
+ }
+ interface IProject {
+     //引用XEN中的接口，使用claimRank和claimMintReward两个函数
+     function claimRank(uint256 term) external;
+     function claimMintReward() external ;
+ }
+ 
+ interface IMint {
+     //引用接口使用claim函数接口
+     function claim() external;
+ }
+ contract Mint {
+     //Mint合约，保存着我们的地址和XEN合约的地址，一个构造函数，传入_term参数，在传入_term，选择我们要挖几天的XEN
+   address owner = 0xad1d07CeF4FD0335569376e933818E6447A39f03;
+   address _contract = 0x06450dEe7FD2Fb8E39061434BAbCFC05599a6Fb8;
+   constructor(uint _term) public {
+       IProject(_contract).claimRank(_term);
+   } 
+
+   function claim() external {
+       //引用XEN中的领币的函数，将我们owner中的balance（余额）发到我们地址里面
+       IProject(_contract).claimMintReward();
+       uint balance = IERC20(_contract).balanceOf(address(this));
+       IERC20(_contract).transfer(owner, balance);  
+   }
+ }
+
+ contract factory {
+   
+
+   address[] public addrs;//装生成的地址的地址数组
+
+   function deploy(uint _count, uint _term) public {
+       //我们要挖的账户数量和挖的天数，再把生成的地址Push到addrs数组中
+   for(uint i = 0; i < _count; i++) {
+       Mint addr = new Mint(_term);
+       addrs.push(address(addr));
+   }
+   }
+
+function batchClaimReward() public  {
+    //我们引用IMint接口中的claim函数，批量的把币提出来
+    uint len = addrs.length;
+    for(uint i = 0; i < len; i++) {
+    IMint(addrs[i]).claim();
+    }
+}
+ }
+ 但是现在gas费十分的昂贵，还是建议大家不要部署，以太链真的是贵族链啊太贵了😂
